@@ -14,72 +14,99 @@ void executeCommand(char* command[][3], int numberOfCommands, char** operators)
 	
 	while(indexOfCommand != numberOfCommands) {
 		  
-		//printf("skip?: %d\n", skip);
 		if(skip)
 		{
-			//take next command out of list
 			indexOfCommand++;
 			skip = 0;
 		}
 		
 		nextCommand = command[indexOfCommand];
+		if ((nextCommand[0] == "exit")) exit(0);
 		
-		int savedStdOut = dup(1), savedStdIn = dup(0);
+		int savedStdOut = dup(1), savedStdIn = dup(0); //save old file descriptors before changing
 		
-		if (strchr(nextCommand[1], '<') != NULL)
+		if (strchr(nextCommand[1], '<') != NULL || strchr(nextCommand[1], '>')  != NULL)
 		{
-			printf("Found inputfile\n");
-			int fd0 = open("in", O_RDONLY);
-			dup2(fd0, STDIN_FILENO);
-			close(fd0);
+			char test[50];
+			strcpy(test, nextCommand[1]);
+			char *token = strtok(test, " ");
+			char *files[4];
+			
+			int i = 0;
+			while(token != NULL)
+			{
+				files[i] = token;
+				token = strtok(NULL, " ");
+				i++;
+			}
+			
+			free(token);
+			
+			if (strcmp(files[0],"<") == 0)
+			{
+				int fd0 = open(files[1], O_RDONLY);
+				dup2(fd0, STDIN_FILENO);
+				close(fd0);
+			}
+			
+			if (strcmp(files[0],">") == 0)
+			{
+				int fd1 = creat(files[1] , 0644) ;
+				dup2(fd1, STDOUT_FILENO);
+				close(fd1);
+			}
+			
+			if (strcmp(files[2],">") == 0)
+			{
+				int fd1 = creat(files[3] , 0644) ;
+				dup2(fd1, STDOUT_FILENO);
+				close(fd1);
+			}
 		}
-		
-		if (strchr(nextCommand[1], '>') != NULL)
-		{
-			printf("Found outputfile\n");
-			int fd1 = creat("out" , 0644) ;
-			dup2(fd1, STDOUT_FILENO);
-			close(fd1);
-		}
-		
-		//printf("nextCommand: %s\n", nextCommand[0]);
 
 		if((child=fork())==0) {
 			// execute the command entered by the user
 			execvp(nextCommand[0], nextCommand);
-			printf("Command %s not found!\n", nextCommand[0]);
+			printf("Error: command not found!");
 			exit(-1);
 		} 
 		else 
-			{
+		{
 			waitpid(-1,&status,0);
 			
+			//restore old file descriptors
 			dup2(savedStdOut, 1);
 			close(savedStdOut);
-			
 			dup2(savedStdIn, 0);
 			close(savedStdIn);
 			
-			
 			if(WEXITSTATUS(status) != 0)
 			{
-				printf("child exited with = %d\n",WEXITSTATUS(status));
-				if(operators[indexOfCommand] == "&&") skip = 1; //command failed and skip next
+				if((operators[indexOfCommand] == "&&")) skip = 1; //command failed and skip next
+			}
+			else
+			{
+				if ((operators[indexOfCommand] == "||")) skip = 1; //command succes but skip anyway
 			}
 		}
-		if (operators[indexOfCommand] == "||") skip = 1;
-		else if (operators[indexOfCommand] == ";") skip = 0;
 		indexOfCommand++;
 	}
 }
 
 int main(int argc, char **argv)
 {
-  //char* command[][3] = {{"echo", "a", NULL}, {"echo", "a", NULL}, {"echo", "c", NULL}, {"echo", "d", NULL}};;
+  //char* command[][3] = {{"echo", "a", NULL}, {"echo", "b", NULL}, {"echo", "c", NULL}, {"echo", "d", NULL}};;
   //char* operators[] = {"||", "&&", ";"};
   
-  char* command[][3] = {{"./b.out", "< in > out", NULL}, {"echo", "a", NULL}, {"echo", "b", NULL} };
-  char* operators[] = {"||",";"};
+  //char* command[][3] = {{"./b.out", "< in", NULL}, {"echo", "a", NULL}, {"echo", "b", NULL} };
+  //char* operators[] = {"&&",";"};
   
-  executeCommand(command, 3, operators);
+  //char* command[][3] = {{"echo", "some string <> with 'special' characters", NULL}, {"echo", "b", NULL}};
+  //char* operators[] = {"&&"};
+  
+  char* command[][3] = {"exit", "exit", NULL};
+  char* operators[] = {};
+  
+  executeCommand(command, 1, operators);
+  exit(0);
 }
