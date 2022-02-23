@@ -19,7 +19,18 @@ struct argumentsContainer{
 
  void fineParserSingular(char **arguments, int size,  char* result[0][3]) {
     result[0][0] = arguments[0];
-    result[0][1] = arguments[1];
+    if(size == 2){
+        result[0][1] = arguments[1];
+    }else{
+        char temp[1000];
+
+        for(int i=1;i<size;i++){
+            strcat(temp, arguments[i]);
+        }
+
+        strcpy(result[0][1], temp);
+    }
+
     result[0][2] = NULL;
 }
 
@@ -295,28 +306,40 @@ void shell_loop() {
         }else{
             arguments = parseInput(userInput);
 
-            static char* toExecute[0][3];
-            fineParserSingular(arguments.arguments, arguments.size, toExecute);
+            if(arguments.size==1){
+
+                finalCommands.command[0][0] = arguments.arguments[0];
+                finalCommands.command[0][1] = NULL;
+                finalCommands.command[0][2] = NULL;
+                finalCommands.numberOfCommands = 1;
+
+                char* operators[] = {"x"};
+
+                executeCommand(finalCommands.command, finalCommands.numberOfCommands, operators);
+
+            }else if(arguments.size>1){
+                static char* toExecute[0][3];
+                fineParserSingular(arguments.arguments, arguments.size, toExecute);
+
+                for(int i = 0; i<3; i++){
+                    finalCommands.command[0][i] = toExecute[0][i];
+                }
+                finalCommands.numberOfCommands = 1;
 
 
-            for(int i = 0; i<3; i++){
-                finalCommands.command[0][i] = toExecute[0][i];
+                //char* operators[] = {"||", "&&", ";"};
+                //printf("%d", toExecute.numberOfCommands);
+                //printCommands(toExecute);
+                //char* command[][3] = {{"echo", "a", NULL}, {"echo", "a", NULL}, {"echo", "c", NULL}, {"echo", "d", NULL}};;
+                //char* operators[] = {"||", "&&", ";"};
+
+                //char* command[][3] = {{"./b.out", "< in > out", NULL}, {"echo", "a", NULL}, {"echo", "b", NULL} };
+                char* operators[] = {"x"};
+
+                //executeCommand(command, 3, operators);
+                executeCommand(finalCommands.command, finalCommands.numberOfCommands, operators);
+
             }
-            finalCommands.numberOfCommands = 1;
-
-
-            //char* operators[] = {"||", "&&", ";"};
-            //printf("%d", toExecute.numberOfCommands);
-            //printCommands(toExecute);
-            //char* command[][3] = {{"echo", "a", NULL}, {"echo", "a", NULL}, {"echo", "c", NULL}, {"echo", "d", NULL}};;
-            //char* operators[] = {"||", "&&", ";"};
-
-            //char* command[][3] = {{"./b.out", "< in > out", NULL}, {"echo", "a", NULL}, {"echo", "b", NULL} };
-            //char* operators[] = {"||",";"};
-
-            //executeCommand(command, 3, operators);
-            executeCommand(finalCommands.command, finalCommands.numberOfCommands, finalCommands.operators);
-
 
         }
 
