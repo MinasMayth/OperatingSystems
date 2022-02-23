@@ -12,7 +12,6 @@ struct commandList{
     char* command[][3];
 };
 
-
 struct argumentsContainer{
     char **arguments;
     int size;
@@ -23,112 +22,27 @@ struct argumentsContainer{
     result[0][1] = arguments[1];
     result[0][2] = NULL;
 }
-void printCommands(struct commandList list) {
-    printf("%d commands\n", list.numberOfCommands);
-    printf("%s\n", list.command[0][0]);
-    printf("%s\n", list.command[0][1]);
-    //printf("%s\n", list.command[0][2]);
-}
 
-void fineParserV3(struct commandList result, char **arguments, int n) {
-    result.numberOfCommands = 1;
 
-    for(int i=0; i<n; i++){
-        char *current_arg = arguments[i];
-        if(i == 0){
-            result.command[0][0] = current_arg;
-            printf("%s\n", result.command[0][0]);
-        }else{
-            result.command[0][1] = current_arg;
-            result.command[0][2] = NULL;
+// Function to perform Selection Sort
+void arraySort(int arr[], char* arr2[], int n)
+{
+     int temp;
+     char* temp2;
+    //Sort the array in ascending order
+    for (int i = 0; i < n; i++) {
+        for (int j = i+1; j < n; j++) {
+            if(arr[i] > arr[j]) {
+                temp = arr[i];
+                arr[i] = arr[j];
+                arr[j] = temp;
+
+                temp2 = arr2[i];
+                arr2[i] = arr2[j];
+                arr2[j] = temp2;
+            }
         }
     }
-    printCommands(result);
-
-}
-
-struct commandList fineParserV2(char **arguments, int n) {
-    struct commandList result;
-    result.numberOfCommands = 0;
-    result.operators = malloc(64*sizeof(char**));
-    int commandIterator = 0;
-    char temp[1000];
-    bool newArgument = true;
-
-    for(int i=0; i<n; i++){
-        char *current_arg = arguments[i];
-        if(newArgument){
-            result.command[commandIterator][0] = current_arg;
-            printf("%s", result.command[commandIterator][0]);
-            newArgument = false;
-        }else if (current_arg[0] == '"'){
-            //Start of arguments
-            strcat(temp, current_arg);
-        }else if (i == n-1){
-            strcat(temp, current_arg);
-            strcpy(result.command[commandIterator][1], temp);
-            //printf("%s", result.command[commandIterator][1]);
-            result.command[commandIterator][2] = NULL;
-            result.numberOfCommands++;
-        }else{
-            strcat(temp, current_arg);
-        }
-    }
-    printCommands(result);
-    return result;
-}
-
-/*
- * Fine parsing function to format commands
-printf("%s", list.command[0][0]) * into a style that the shell executor can
- * understand.
- */
-struct commandList fineParser(char **arguments, int n) {
-    struct commandList result;
-    int commandIterator = 0;
-    char *temp = malloc(sizeof(arguments[0]));
-    unsigned long tempSize = 0;
-    bool newArgument = true;
-
-    for(int i=0; i<n; i++){
-        char *current_arg = arguments[i];
-        if(newArgument){
-            result.command[commandIterator][0] = current_arg;
-            printf("%s", current_arg);
-            newArgument = false;
-        }else if (current_arg[0] == "&" || current_arg[0] == "|"){ //We still need to check for semicolon
-            //We have reached the end of a command
-            newArgument = true;
-            result.command[commandIterator][1] = temp;
-            result.command[commandIterator][2] = NULL;
-            result.numberOfCommands++;
-            commandIterator++;
-            free(temp);
-            temp = malloc(0);
-            tempSize = 0;
-        }else if (current_arg[0] == '"'){
-            //Start of arguments
-            tempSize += strlen(current_arg);
-            temp = realloc(temp, tempSize* sizeof(char*));
-            strcat(temp, current_arg);
-        }else if (i == n-1){
-            tempSize += strlen(current_arg);
-            temp = realloc(temp, tempSize* sizeof(char*));
-            strcat(temp, current_arg);
-            result.command[commandIterator][1] = temp;
-            result.command[commandIterator][2] = NULL;
-            result.numberOfCommands++;
-
-        }else{
-            tempSize += strlen(current_arg);
-            realloc(temp, tempSize* sizeof(char*));
-            strcat(temp, current_arg);
-        }
-
-    }
-
-    free(temp);
-    return result;
 }
 
 void executeCommand(char* command[][3], int numberOfCommands, char** operators)
@@ -219,6 +133,31 @@ char *readInput(void) {
     return userInput;
 }
 
+int collectOperands(const char * haystack, const char *needle, char** operandsFound, int* operandsIndex, int position)
+{
+    int count = 0;
+    const char *tmp = haystack;
+    while( (tmp = strstr( tmp, needle))){
+        ++count;
+        tmp++;
+        operandsFound[position] = needle;
+        operandsIndex[position] = (int)(tmp-haystack);
+        position++;
+    }
+    return position;
+}
+
+int get_substr_count(const char * haystack, const char *needle)
+{
+    int count = 0;
+    const char *tmp = haystack;
+    while( (tmp = strstr( tmp, needle))){
+        ++count;
+        tmp++;
+    }
+    return count;
+}
+
 #define PARSE_BUFFER 64
 #define PARSE_DELIM " \t\r\n\a"
 struct argumentsContainer parseInput(char *line) {
@@ -256,8 +195,45 @@ struct argumentsContainer parseInput(char *line) {
     return result;
 }
 
+#define ARG_BUFFER 64
+#define ARG_DELIM ";&&||"
+struct argumentsContainer splitArguments(char *line) {
+    int bufferSize = ARG_BUFFER, position = 0;
+    char **tokens = malloc(bufferSize * sizeof(char*));
+    char *token;
 
+    if (!tokens) {
+        fprintf(stderr, "shell: memory allocation error\n");
+        exit(EXIT_FAILURE);
+    }
 
+    token = strtok(line, ARG_DELIM);
+    while (token != NULL) {
+        tokens[position] = token;
+        position++;
+
+        if (position >= bufferSize) {
+            bufferSize += ARG_BUFFER;
+            tokens = realloc(tokens, bufferSize * sizeof(char*));
+            if (!tokens) {
+                fprintf(stderr, "shell: memory allocation error\n");
+                exit(EXIT_FAILURE);
+            }
+        }
+
+        token = strtok(NULL, ARG_DELIM);
+    }
+    tokens[position] = NULL;
+
+    struct argumentsContainer result;
+    result.arguments = tokens;
+    result.size = position;
+
+    return result;
+}
+
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "EndlessLoop"
 /*
  * Main loop of shell. User input will be read in, split
  * into arguments and then executed.
@@ -267,41 +243,92 @@ void shell_loop() {
     struct argumentsContainer arguments;
     int status;
 
+
     do {
+        struct commandList finalCommands;
+
         printf("> ");
         userInput = readInput();
 
+        int amperCount = get_substr_count(userInput, "&&");
+        int semiCount = get_substr_count(userInput, ";");
+        int lineCount = get_substr_count(userInput, "||");
+
+        const int operandsCount = amperCount+semiCount+lineCount;
+
+        if(operandsCount != 0){
+            //struct operandInfo operandsList[operandsCount];
+
+            char* operandsFound[10];
+            int operandsIndex[10];
+            int position = 0;
+
+            position = collectOperands(userInput, "&&", operandsFound, operandsIndex, position);
+            position = collectOperands(userInput, ";", operandsFound, operandsIndex, position);
+            position = collectOperands(userInput, "||", operandsFound, operandsIndex, position);
+
+            arraySort(operandsIndex, operandsFound, operandsCount);
+
+            finalCommands.operators = operandsFound;
+
+            arguments = splitArguments(userInput);
+
+            for(int i=0; i<arguments.size; i++){
+                //printf("%s\n", arguments.arguments[i]);
+                struct argumentsContainer commandArgs = parseInput(arguments.arguments[i]);
+
+                static char* toExecute[0][3];
+                fineParserSingular(commandArgs.arguments, commandArgs.size, toExecute);
 
 
-        arguments = parseInput(userInput);
+                for(int j = 0; j<3; j++){
+                    finalCommands.command[i][j] = toExecute[0][j];
+                }
+                finalCommands.numberOfCommands++;
+
+                //printf("%s\n", finalCommands.command[i][1]);
+                //free(commandArgs.arguments);
+
+            }
+            executeCommand(finalCommands.command, finalCommands.numberOfCommands, finalCommands.operators);
+
+        }else{
+            arguments = parseInput(userInput);
+
+            static char* toExecute[0][3];
+            fineParserSingular(arguments.arguments, arguments.size, toExecute);
 
 
-        //fineParserV3(toExecute, arguments.arguments, arguments.size);
+            for(int i = 0; i<3; i++){
+                finalCommands.command[0][i] = toExecute[0][i];
+            }
+            finalCommands.numberOfCommands = 1;
 
-        static char* toExecute[0][3];
-        fineParserSingular(arguments.arguments, arguments.size, toExecute);
 
-        struct commandList finalCommands;
+            //char* operators[] = {"||", "&&", ";"};
+            //printf("%d", toExecute.numberOfCommands);
+            //printCommands(toExecute);
+            //char* command[][3] = {{"echo", "a", NULL}, {"echo", "a", NULL}, {"echo", "c", NULL}, {"echo", "d", NULL}};;
+            //char* operators[] = {"||", "&&", ";"};
 
-        for(int i = 0; i<3; i++){
-            finalCommands.command[0][i] = toExecute[0][i];
+            //char* command[][3] = {{"./b.out", "< in > out", NULL}, {"echo", "a", NULL}, {"echo", "b", NULL} };
+            //char* operators[] = {"||",";"};
+
+            //executeCommand(command, 3, operators);
+            executeCommand(finalCommands.command, finalCommands.numberOfCommands, finalCommands.operators);
+
+
         }
-        finalCommands.numberOfCommands = 1;
 
-        //printf("%s\n", finalCommands.command[0][0]);
-        //printf("%s\n", finalCommands.command[0][1]);
-
-        //char* operators[] = {"||", "&&", ";"};
-        //printf("%d", toExecute.numberOfCommands);
-        //printCommands(toExecute);
-        executeCommand(finalCommands.command, finalCommands.numberOfCommands, finalCommands.operators);
 
 
         free(userInput);
-        free(arguments.arguments);
+        //free(arguments.arguments);
+        //free(finalCommands.command);
 
-    }while(status);
+    }while(true);
 }
+#pragma clang diagnostic pop
 
 
 int main(int argc, char **argv) {
