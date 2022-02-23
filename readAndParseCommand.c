@@ -12,18 +12,22 @@ struct commandList{
     char* command[][3];
 };
 
+
 struct argumentsContainer{
     char **arguments;
     int size;
 };
 
+ void fineParserSingular(char **arguments, int size,  char* result[0][3]) {
+    result[0][0] = arguments[0];
+    result[0][1] = arguments[1];
+    result[0][2] = NULL;
+}
 void printCommands(struct commandList list) {
     printf("%d commands\n", list.numberOfCommands);
     printf("%s\n", list.command[0][0]);
     printf("%s\n", list.command[0][1]);
     //printf("%s\n", list.command[0][2]);
-
-
 }
 
 void fineParserV3(struct commandList result, char **arguments, int n) {
@@ -252,6 +256,8 @@ struct argumentsContainer parseInput(char *line) {
     return result;
 }
 
+
+
 /*
  * Main loop of shell. User input will be read in, split
  * into arguments and then executed.
@@ -264,19 +270,36 @@ void shell_loop() {
     do {
         printf("> ");
         userInput = readInput();
+
+
+
         arguments = parseInput(userInput);
 
-        struct commandList toExecute;
 
-        fineParserV3(toExecute, arguments.arguments, arguments.size);
+        //fineParserV3(toExecute, arguments.arguments, arguments.size);
 
+        static char* toExecute[0][3];
+        fineParserSingular(arguments.arguments, arguments.size, toExecute);
+
+        struct commandList finalCommands;
+
+        for(int i = 0; i<3; i++){
+            finalCommands.command[0][i] = toExecute[0][i];
+        }
+        finalCommands.numberOfCommands = 1;
+
+        //printf("%s\n", finalCommands.command[0][0]);
+        //printf("%s\n", finalCommands.command[0][1]);
+
+        //char* operators[] = {"||", "&&", ";"};
         //printf("%d", toExecute.numberOfCommands);
-        printCommands(toExecute);
-        //executeCommand(toExecute.command, toExecute.numberOfCommands, toExecute.operators);
+        //printCommands(toExecute);
+        executeCommand(finalCommands.command, finalCommands.numberOfCommands, finalCommands.operators);
 
 
         free(userInput);
         free(arguments.arguments);
+
     }while(status);
 }
 
