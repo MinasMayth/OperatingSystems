@@ -17,6 +17,32 @@ struct argumentsContainer{
     int size;
 };
 
+void printCommands(struct commandList list) {
+    printf("%d commands\n", list.numberOfCommands);
+    printf("%s\n", list.command[0][0]);
+    printf("%s\n", list.command[0][1]);
+    //printf("%s\n", list.command[0][2]);
+
+
+}
+
+void fineParserV3(struct commandList result, char **arguments, int n) {
+    result.numberOfCommands = 1;
+
+    for(int i=0; i<n; i++){
+        char *current_arg = arguments[i];
+        if(i == 0){
+            result.command[0][0] = current_arg;
+            printf("%s\n", result.command[0][0]);
+        }else{
+            result.command[0][1] = current_arg;
+            result.command[0][2] = NULL;
+        }
+    }
+    printCommands(result);
+
+}
+
 struct commandList fineParserV2(char **arguments, int n) {
     struct commandList result;
     result.numberOfCommands = 0;
@@ -29,7 +55,7 @@ struct commandList fineParserV2(char **arguments, int n) {
         char *current_arg = arguments[i];
         if(newArgument){
             result.command[commandIterator][0] = current_arg;
-            //printf("%s", result.command[commandIterator][0]);
+            printf("%s", result.command[commandIterator][0]);
             newArgument = false;
         }else if (current_arg[0] == '"'){
             //Start of arguments
@@ -43,9 +69,8 @@ struct commandList fineParserV2(char **arguments, int n) {
         }else{
             strcat(temp, current_arg);
         }
-
     }
-
+    printCommands(result);
     return result;
 }
 
@@ -227,8 +252,6 @@ struct argumentsContainer parseInput(char *line) {
     return result;
 }
 
-void printCommands(struct commandList list);
-
 /*
  * Main loop of shell. User input will be read in, split
  * into arguments and then executed.
@@ -243,9 +266,11 @@ void shell_loop() {
         userInput = readInput();
         arguments = parseInput(userInput);
 
-        struct commandList toExecute = fineParserV2(arguments.arguments, arguments.size);
+        struct commandList toExecute;
 
-        printf("%d", toExecute.numberOfCommands);
+        fineParserV3(toExecute, arguments.arguments, arguments.size);
+
+        //printf("%d", toExecute.numberOfCommands);
         printCommands(toExecute);
         //executeCommand(toExecute.command, toExecute.numberOfCommands, toExecute.operators);
 
@@ -255,14 +280,6 @@ void shell_loop() {
     }while(status);
 }
 
-void printCommands(struct commandList list) {
-    printf("%d commands\n", list.numberOfCommands);
-    printf("%s\n", list.command[0][0]);
-    printf("%s\n", list.command[0][1]);
-    printf("%s\n", list.command[0][2]);
-
-
-}
 
 int main(int argc, char **argv) {
     // Load any configuration files
