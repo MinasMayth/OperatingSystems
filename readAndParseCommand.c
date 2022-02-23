@@ -2,9 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <sys/wait.h>
 #include <fcntl.h>
 #include <stdbool.h>
@@ -15,24 +12,60 @@ struct commandList{
     char* command[][3];
 };
 
+struct argumentsContainer{
+    char **arguments;
+    int size;
+};
+
+struct commandList fineParserV2(char **arguments, int n) {
+    struct commandList result;
+    result.numberOfCommands = 0;
+    result.operators = malloc(64*sizeof(char**));
+    int commandIterator = 0;
+    char temp[1000];
+    bool newArgument = true;
+
+    for(int i=0; i<n; i++){
+        char *current_arg = arguments[i];
+        if(newArgument){
+            result.command[commandIterator][0] = current_arg;
+            //printf("%s", result.command[commandIterator][0]);
+            newArgument = false;
+        }else if (current_arg[0] == '"'){
+            //Start of arguments
+            strcat(temp, current_arg);
+        }else if (i == n-1){
+            strcat(temp, current_arg);
+            strcpy(result.command[commandIterator][1], temp);
+            //printf("%s", result.command[commandIterator][1]);
+            result.command[commandIterator][2] = NULL;
+            result.numberOfCommands++;
+        }else{
+            strcat(temp, current_arg);
+        }
+
+    }
+
+    return result;
+}
+
 /*
  * Fine parsing function to format commands
- * into a style that the shell executor can
+printf("%s", list.command[0][0]) * into a style that the shell executor can
  * understand.
  */
 struct commandList fineParser(char **arguments, int n) {
     struct commandList result;
     int commandIterator = 0;
-    char *temp;
+    char *temp = malloc(sizeof(arguments[0]));
     unsigned long tempSize = 0;
+    bool newArgument = true;
 
-    for(int i=0; i=n; i++){
+    for(int i=0; i<n; i++){
         char *current_arg = arguments[i];
-
-        bool newArgument;
-
         if(newArgument){
-            result.command[commandIterator][0] == current_arg;
+            result.command[commandIterator][0] = current_arg;
+            printf("%s", current_arg);
             newArgument = false;
         }else if (current_arg[0] == "&" || current_arg[0] == "|"){ //We still need to check for semicolon
             //We have reached the end of a command
@@ -47,11 +80,11 @@ struct commandList fineParser(char **arguments, int n) {
         }else if (current_arg[0] == '"'){
             //Start of arguments
             tempSize += strlen(current_arg);
-            realloc(temp, tempSize* sizeof(char*));
+            temp = realloc(temp, tempSize* sizeof(char*));
             strcat(temp, current_arg);
         }else if (i == n-1){
             tempSize += strlen(current_arg);
-            realloc(temp, tempSize* sizeof(char*));
+            temp = realloc(temp, tempSize* sizeof(char*));
             strcat(temp, current_arg);
             result.command[commandIterator][1] = temp;
             result.command[commandIterator][2] = NULL;
@@ -138,19 +171,6 @@ void executeCommand(char* command[][3], int numberOfCommands, char** operators)
 }
 
 /*
-int main(int argc, char **argv)
-{
-    //char* command[][3] = {{"echo", "a", NULL}, {"echo", "a", NULL}, {"echo", "c", NULL}, {"echo", "d", NULL}};;
-    //char* operators[] = {"||", "&&", ";"};
-
-    char* command[][3] = {{"./b.out", "< in > out", NULL}, {"echo", "a", NULL}, {"echo", "b", NULL} };
-    char* operators[] = {"||",";"};
-
-    executeCommand(command, 3, operators);
-}*/
-
-
-/*
  * User input is read in by initially allocating a buffer
  * size for input and then reallocating more space when needed.
  */
@@ -172,7 +192,7 @@ char *readInput(void) {
 
 #define PARSE_BUFFER 64
 #define PARSE_DELIM " \t\r\n\a"
-char **parseInput(char *line) {
+struct argumentsContainer parseInput(char *line) {
     int bufferSize = PARSE_BUFFER, position = 0;
     char **tokens = malloc(bufferSize * sizeof(char*));
     char *token;
@@ -200,8 +220,14 @@ char **parseInput(char *line) {
     }
     tokens[position] = NULL;
 
-    return tokens;
+    struct argumentsContainer result;
+    result.arguments = tokens;
+    result.size = position;
+
+    return result;
 }
+
+void printCommands(struct commandList list);
 
 /*
  * Main loop of shell. User input will be read in, split
@@ -209,23 +235,33 @@ char **parseInput(char *line) {
  * */
 void shell_loop() {
     char *userInput;
-    char **arguments;
+    struct argumentsContainer arguments;
     int status;
 
     do {
         printf("> ");
         userInput = readInput();
         arguments = parseInput(userInput);
-        printf("%c", arguments[1][0]);
 
-        //struct commandList toExecute = fineParser(arguments);
+        struct commandList toExecute = fineParserV2(arguments.arguments, arguments.size);
 
+        printf("%d", toExecute.numberOfCommands);
+        printCommands(toExecute);
         //executeCommand(toExecute.command, toExecute.numberOfCommands, toExecute.operators);
 
 
         free(userInput);
-        free(arguments);
+        free(arguments.arguments);
     }while(status);
+}
+
+void printCommands(struct commandList list) {
+    printf("%d commands\n", list.numberOfCommands);
+    printf("%s\n", list.command[0][0]);
+    printf("%s\n", list.command[0][1]);
+    printf("%s\n", list.command[0][2]);
+
+
 }
 
 int main(int argc, char **argv) {
