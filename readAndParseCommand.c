@@ -108,74 +108,93 @@ void arraySort(int arr[], char* arr2[], int n)
         }
     }
 }
-
 void executeCommand(char* command[][3], int numberOfCommands, char** operators)
 {
     int child,status, skip = 0, indexOfCommand = 0;
 
     char **nextCommand;
 
-
     while(indexOfCommand != numberOfCommands) {
 
-        //printf("skip?: %d\n", skip);
         if(skip)
         {
-            //take next command out of list
             indexOfCommand++;
             skip = 0;
         }
 
         nextCommand = command[indexOfCommand];
+        if (!strcmp(nextCommand[0],"exit")) exit(0);
 
-        int savedStdOut = dup(1), savedStdIn = dup(0);
+        int savedStdOut = dup(1), savedStdIn = dup(0); //save old file descriptors before changing
 
-        if (strchr(nextCommand[1], '<') != NULL)
+        if (strchr(nextCommand[1], '<') != NULL || strchr(nextCommand[1], '>')  != NULL)
         {
-            printf("Found inputfile\n");
-            int fd0 = open("in", O_RDONLY);
-            dup2(fd0, STDIN_FILENO);
-            close(fd0);
-        }
+            char test[50];
+            strcpy(test, nextCommand[1]);
+            char *token = strtok(test, " ");
+            char *files[4];
 
-        if (strchr(nextCommand[1], '>') != NULL)
-        {
-            printf("Found outputfile\n");
-            int fd1 = creat("out" , 0644) ;
-            dup2(fd1, STDOUT_FILENO);
-            close(fd1);
-        }
+            int i = 0;
+            while(token != NULL)
+            {
+                files[i] = token;
+                token = strtok(NULL, " ");
+                i++;
+            }
 
-        //printf("nextCommand: %s\n", nextCommand[0]);
+            free(token);
+
+            if (strcmp(files[0],"<") == 0)
+            {
+                int fd0 = open(files[1], O_RDONLY);
+                dup2(fd0, STDIN_FILENO);
+                close(fd0);
+            }
+
+            if (strcmp(files[0],">") == 0)
+            {
+                int fd1 = creat(files[1] , 0644) ;
+                dup2(fd1, STDOUT_FILENO);
+                close(fd1);
+            }
+
+            if (strcmp(files[2],">") == 0)
+            {
+                int fd1 = creat(files[3] , 0644) ;
+                dup2(fd1, STDOUT_FILENO);
+                close(fd1);
+            }
+        }
 
         if((child=fork())==0) {
             // execute the command entered by the user
             execvp(nextCommand[0], nextCommand);
-            printf("Command %s not found!\n", nextCommand[0]);
+            printf("Error: command not found!");
             exit(-1);
         }
         else
         {
             waitpid(-1,&status,0);
 
+            //restore old file descriptors
             dup2(savedStdOut, 1);
             close(savedStdOut);
-
             dup2(savedStdIn, 0);
             close(savedStdIn);
 
-
             if(WEXITSTATUS(status) != 0)
             {
-                printf("child exited with = %d\n",WEXITSTATUS(status));
-                if(operators[indexOfCommand] == "&&") skip = 1; //command failed and skip next
+                if(!strcmp(operators[indexOfCommand], "&&")) skip = 1; //command failed and skip next
+            }
+            else
+            {
+                if (!strcmp(operators[indexOfCommand], "||")) skip = 1; //command succes but skip anyway
             }
         }
-        if (operators[indexOfCommand] == "||") skip = 1;
-        else if (operators[indexOfCommand] == ";") skip = 0;
         indexOfCommand++;
     }
 }
+
 
 /*
  * User input is read in by initially allocating a buffer
@@ -316,7 +335,7 @@ struct argumentsContainer splitArguments(char *line) {
 /*
  * Function to count the number of operands in a line of input
  */
-int countOperands(char *input) {
+int count_operands(char *input) {
     int amperCount = get_substr_count(input, "&&");
     int semiCount = get_substr_count(input, ";");
     int lineCount = get_substr_count(input, "||");
@@ -378,7 +397,7 @@ void shell_loop() {
         printf("> ");
         userInput = readInput();
 
-        int operandsCount = countOperands(userInput);
+        int operandsCount = count_operands(userInput);
 
         if(operandsCount != 0){ //Multiple commands entered
 
@@ -405,13 +424,13 @@ void shell_loop() {
         }else{
             arguments = parseInput(userInput);
 
-            if(arguments.size==1){
+            if(arguments.size==1){ //single word command
                 finalCommands.command[0][0] = arguments.arguments[0];
                 finalCommands.command[0][1] = NULL;
                 finalCommands.command[0][2] = NULL;
                 finalCommands.numberOfCommands = 1;
 
-                char* operators[] = {"x"};
+                char* operators[] = {"x"}; //garbage value
 
                 executeCommand(finalCommands.command, finalCommands.numberOfCommands, operators);
 
