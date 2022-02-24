@@ -81,11 +81,11 @@ void executeCommand(char* command[][3], int numberOfCommands, char** operators)
 			
 			if(WEXITSTATUS(status) != 0)
 			{
-				if(!strcmp(operators[indexOfCommand], "&&")) skip = 1; //command failed and skip next
+				if(numberOfCommands > 1) if(!strcmp(operators[indexOfCommand], "&&")) skip = 1; //command failed and skip next
 			}
 			else
 			{
-				if (!strcmp(operators[indexOfCommand], "||")) skip = 1; //command succes but skip anyway
+				if(numberOfCommands > 1) if (!strcmp(operators[indexOfCommand], "||")) skip = 1; //command succes but skip anyway
 			}
 		}
 		indexOfCommand++;
@@ -94,8 +94,8 @@ void executeCommand(char* command[][3], int numberOfCommands, char** operators)
 
 int main(int argc, char **argv)
 {
-  char* command[][3] = {{"echo", "a", NULL}, {"echo", "b", NULL}, {"echo", "c", NULL}, {"echo", "d", NULL}};;
-  char* operators[] = {"||", "&&", ";"};
+  //char* command[][3] = {{"echo", "a", NULL}, {"echo", "b", NULL}, {"echo", "c", NULL}, {"echo", "d", NULL}};;
+  //char* operators[] = {"||", "&&", ";"};
   
   //char* command[][3] = {{"./b.out", "< in", NULL}, {"echo", "a", NULL}, {"echo", "b", NULL} };
   //char* operators[] = {"&&",";"};
@@ -106,8 +106,9 @@ int main(int argc, char **argv)
   //char* command[][3] = {"exit", "exit", NULL};
   //char* operators[] = {};
   
-  //char* command[][3] = {"echo", "a", NULL};
+  char* command[][3] = {{"echo", "x", NULL}};
+  char* operators[] = {};
   
-  executeCommand(command, 4, operators);
+  executeCommand(command, 1, operators);
   exit(0);
 }
