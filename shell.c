@@ -5,6 +5,9 @@
 #include <sys/wait.h>
 #include <fcntl.h>
 
+/*
+ * Function to trim trailing white spaces from a given string.
+ */
 void trimTrailingWhiteSpace(char *str)
 {
   int j = 0;
@@ -15,6 +18,11 @@ void trimTrailingWhiteSpace(char *str)
   str[j+1] = '\0';
 }
 
+/*
+ * Main command execution function. A command and its arguments
+ * are passed to this function and then handled, returning a status
+ * code that is dependent on the result of the command execution.
+ */
 int executeCommand(char* cmd, char* arg, int size)
 {
   int child,status;
@@ -118,7 +126,10 @@ int executeCommand(char* cmd, char* arg, int size)
     }
   }
 }
-
+/*
+ * Function to read in a command given by the user.
+ * Utilises getline() on stdin.
+ */
 char *readCommand()
 {
   char *line = NULL;
@@ -138,7 +149,10 @@ char *readCommand()
   }
   return line;
 }
-
+/*
+ * Fine parser function to separate a line of user input into
+ * executable command and arguments calls.
+ */
 void fineParse(char *line)
 {
   int i = 0, n = 50, skip = 0, status = 0, size = 0;
@@ -243,6 +257,11 @@ void fineParse(char *line)
   }
 }
 
+/*
+ * Main function for this file.
+ * Will provide an input loop for users that
+ * can be exited via the appropriate command.
+ */
 int main(int argc, char **argv)
 {
   char *input;

@@ -62,11 +62,11 @@ void removeChar(char str[], char t )
  * and a destination array, formatting everything nicely so that it can be run
  * by the shell.
  */
- void fineParserSingular(char **arguments, int size,  char* result[0][3]) {
-    result[0][0] = arguments[0];
+void fineParserSingular(char **arguments, int size, struct commandList result, int i1) {
+    result.command[i1][0] = arguments[0];
     if(size == 2){
         removeChar(arguments[1], '"');
-        result[0][1] = arguments[1];
+        result.command[i1][1] = arguments[1];
     }else{
         char temp[100] = "";
         for(int i=1;i<size;i++){
@@ -77,11 +77,12 @@ void removeChar(char str[], char t )
 
         }
         removeChar(temp, '"');
-        result[0][1] = malloc((sizeof(temp)/sizeof(temp[0]))*sizeof(char*));
-        strcpy(result[0][1], temp);
+        result.command[i1][1] = malloc((sizeof(temp)/sizeof(temp[0]))*sizeof(char*));
+        strcpy(result.command[i1][1], temp);
+
     }
 
-    result[0][2] = NULL;
+    result.command[i1][2] = NULL;
 }
 
 
@@ -108,11 +109,13 @@ void arraySort(int arr[], char* arr2[], int n)
         }
     }
 }
+
 void executeCommand(char* command[][3], int numberOfCommands, char** operators)
 {
     int child,status, skip = 0, indexOfCommand = 0;
 
     char **nextCommand;
+
 
     while(indexOfCommand != numberOfCommands) {
 
@@ -123,7 +126,7 @@ void executeCommand(char* command[][3], int numberOfCommands, char** operators)
         }
 
         nextCommand = command[indexOfCommand];
-        if (!strcmp(nextCommand[0],"exit")) exit(0);
+        if ((nextCommand[0] == "exit")) exit(0);
 
         int savedStdOut = dup(1), savedStdIn = dup(0); //save old file descriptors before changing
 
@@ -184,17 +187,16 @@ void executeCommand(char* command[][3], int numberOfCommands, char** operators)
 
             if(WEXITSTATUS(status) != 0)
             {
-                if(!strcmp(operators[indexOfCommand], "&&")) skip = 1; //command failed and skip next
+                if((operators[indexOfCommand] == "&&")) skip = 1; //command failed and skip next
             }
             else
             {
-                if (!strcmp(operators[indexOfCommand], "||")) skip = 1; //command succes but skip anyway
+                if ((operators[indexOfCommand] == "||")) skip = 1; //command succes but skip anyway
             }
         }
         indexOfCommand++;
     }
 }
-
 
 /*
  * User input is read in by initially allocating a buffer
@@ -348,12 +350,9 @@ int count_operands(char *input) {
  * with the commandList format.
  */
 void extract_arguments(struct argumentsContainer arguments, struct commandList finalCommands) {
-    static char* toExecute[0][3];
-    fineParserSingular(arguments.arguments, arguments.size, toExecute);
+    fineParserSingular(arguments.arguments, arguments.size, finalCommands, 0);
 
-    for(int i = 0; i<3; i++){
-        finalCommands.command[0][i] = toExecute[0][i];
-    }
+
     finalCommands.numberOfCommands = 1;
 
     char* operators[] = {"x"};
@@ -408,12 +407,9 @@ void shell_loop() {
             for(int i=0; i<arguments.size; i++){
                 struct argumentsContainer commandArgs = parseInput(arguments.arguments[i]);
 
-                static char* toExecute[0][3];
-                fineParserSingular(commandArgs.arguments, commandArgs.size, toExecute);
 
-                for(int j = 0; j<3; j++){
-                    finalCommands.command[i][j] = toExecute[0][j];
-                }
+                fineParserSingular(commandArgs.arguments, commandArgs.size, finalCommands, i);
+
                 finalCommands.numberOfCommands++;
 
                 free(commandArgs.arguments);
