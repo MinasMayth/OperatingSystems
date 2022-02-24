@@ -5,6 +5,7 @@
 #include <sys/wait.h>
 #include <fcntl.h>
 #include <stdbool.h>
+#include <assert.h>
 
 struct commandList{
     int numberOfCommands;
@@ -16,25 +17,61 @@ struct argumentsContainer{
     char **arguments;
     int size;
 };
-void pad(char *s, int length)
+void pad(char *dest, int num_of_spaces, int size)
 {
-    int len = strlen(s);
-    s[len + length] = '\0';
+    int len = strlen(dest);
+
+    if( len + num_of_spaces >= size ) {
+        num_of_spaces = size - len - 1;
+    }
+    memset( dest+len, ' ', num_of_spaces );
+    dest[len + num_of_spaces] = '\0';
 
 }
 
+void chopN(char *str, size_t n)
+{
+    assert(n != 0 && str != 0);
+    size_t len = strlen(str);
+    if (n > len)
+        return;  // Or: n = len;
+    memmove(str, str+n, len - n + 1);
+}
+
+
+void removechar( char str[], char t )
+{
+    int i,j;
+    i = 0;
+    while(i<strlen(str))
+    {
+        if (str[i]==t)
+        {
+            for (j=i; j<strlen(str); j++)
+                str[j]=str[j+1];
+        } else i++;
+    }
+}
 
  void fineParserSingular(char **arguments, int size,  char* result[0][3]) {
     result[0][0] = arguments[0];
     if(size == 2){
+        removechar(arguments[1], '"');
         result[0][1] = arguments[1];
     }else{
-        char temp[100];
+        char temp[100] = "";
         for(int i=1;i<size;i++){
             strcat(temp, arguments[i]);
-            pad(temp, 1);
-        }
+            if(i != size-1){
+                pad(temp, 1, 100);
+            }
 
+        }
+        removechar(temp, '"');
+        //printf("%s", temp);
+
+        //result[0][1] = "hello";
+        result[0][1];
         strcpy(result[0][1], temp);
     }
 
