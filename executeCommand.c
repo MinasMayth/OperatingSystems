@@ -11,9 +11,8 @@ void executeCommand(char* command[][3], int numberOfCommands, char** operators)
 	
 	char **nextCommand;
 	
-	
 	while(indexOfCommand != numberOfCommands) {
-		  
+		 
 		if(skip)
 		{
 			indexOfCommand++;
@@ -21,7 +20,7 @@ void executeCommand(char* command[][3], int numberOfCommands, char** operators)
 		}
 		
 		nextCommand = command[indexOfCommand];
-		if ((nextCommand[0] == "exit")) exit(0);
+		if (!strcmp(nextCommand[0],"exit")) exit(0);
 		
 		int savedStdOut = dup(1), savedStdIn = dup(0); //save old file descriptors before changing
 		
@@ -82,11 +81,11 @@ void executeCommand(char* command[][3], int numberOfCommands, char** operators)
 			
 			if(WEXITSTATUS(status) != 0)
 			{
-				if((operators[indexOfCommand] == "&&")) skip = 1; //command failed and skip next
+				if(!strcmp(operators[indexOfCommand], "&&")) skip = 1; //command failed and skip next
 			}
 			else
 			{
-				if ((operators[indexOfCommand] == "||")) skip = 1; //command succes but skip anyway
+				if (!strcmp(operators[indexOfCommand], "||")) skip = 1; //command succes but skip anyway
 			}
 		}
 		indexOfCommand++;
@@ -95,8 +94,8 @@ void executeCommand(char* command[][3], int numberOfCommands, char** operators)
 
 int main(int argc, char **argv)
 {
-  //char* command[][3] = {{"echo", "a", NULL}, {"echo", "b", NULL}, {"echo", "c", NULL}, {"echo", "d", NULL}};;
-  //char* operators[] = {"||", "&&", ";"};
+  char* command[][3] = {{"echo", "a", NULL}, {"echo", "b", NULL}, {"echo", "c", NULL}, {"echo", "d", NULL}};;
+  char* operators[] = {"||", "&&", ";"};
   
   //char* command[][3] = {{"./b.out", "< in", NULL}, {"echo", "a", NULL}, {"echo", "b", NULL} };
   //char* operators[] = {"&&",";"};
@@ -104,9 +103,11 @@ int main(int argc, char **argv)
   //char* command[][3] = {{"echo", "some string <> with 'special' characters", NULL}, {"echo", "b", NULL}};
   //char* operators[] = {"&&"};
   
-  char* command[][3] = {"exit", "exit", NULL};
-  char* operators[] = {};
+  //char* command[][3] = {"exit", "exit", NULL};
+  //char* operators[] = {};
   
-  executeCommand(command, 1, operators);
+  //char* command[][3] = {"echo", "a", NULL};
+  
+  executeCommand(command, 4, operators);
   exit(0);
 }
