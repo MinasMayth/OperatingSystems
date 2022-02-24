@@ -1,2 +1,2 @@
 all:
-	gcc -g readAndParseCommand.c -o shell
+	gcc -g shell.c -o shell

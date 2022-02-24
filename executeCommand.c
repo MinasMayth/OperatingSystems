@@ -103,11 +103,11 @@ int main(int argc, char **argv)
   //char* command[][3] = {{"echo", "some string <> with 'special' characters", NULL}, {"echo", "b", NULL}};
   //char* operators[] = {"&&"};
   
-  //char* command[][3] = {"exit", "exit", NULL};
-  //char* operators[] = {};
-  
-  char* command[][3] = {{"echo", "x", NULL}};
+  char* command[][3] = {{"exit","", NULL}};
   char* operators[] = {};
+  
+  //char* command[][3] = {{"echo", "x", NULL}};
+  //char* operators[] = {};
   
   executeCommand(command, 1, operators);
   exit(0);
