@@ -30,7 +30,7 @@ int executeCommand(char* cmd, char* arg, int size)
 	if (newline) *newline = '\0';
 	
 	if(cmd[0] == '\0') return 1;
-	if(!strcmp(cmd, "exit")) exit(0);
+	if(!strcmp(cmd, "exit")) return 2;
 	
 	if (strchr(arg, '<') != NULL || strchr(arg, '>')  != NULL)
 	{
@@ -149,16 +149,14 @@ void fineParse(char *line)
 	arg[0] = '\0';
 	
 	while (line[i] != '\0')
-	{
-		if (status == 2) break;
-		
+	{	
 		if (line[i] == ' ') 
 		{
 			i++; 
 			continue;
 		}
 		
-		while(line[i] != ' ' && line[i] != '\0')
+		while(line[i] != ' ' && line[i] != '\0' && line[i] != '\n')
 		{
 			strncat(cmd, &line[i], 1);
 			i++; 
@@ -168,7 +166,7 @@ void fineParse(char *line)
 		{
 			if (skip == 0)
 			{
-				status = executeCommand(cmd, arg, n);
+				status = executeCommand(cmd, arg, n);;
 				break;
 			}
 		}
@@ -238,6 +236,11 @@ void fineParse(char *line)
 	}
 	free(cmd);
 	free(arg);
+    if (status == 2) 
+	{
+		free(line);
+		exit(0);
+	}
 }
 
 int main(int argc, char **argv)
