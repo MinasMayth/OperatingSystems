@@ -16,16 +16,23 @@ struct argumentsContainer{
     char **arguments;
     int size;
 };
+void pad(char *s, int length)
+{
+    int len = strlen(s);
+    s[len + length] = '\0';
+
+}
+
 
  void fineParserSingular(char **arguments, int size,  char* result[0][3]) {
     result[0][0] = arguments[0];
     if(size == 2){
         result[0][1] = arguments[1];
     }else{
-        char temp[1000];
-
+        char temp[100];
         for(int i=1;i<size;i++){
             strcat(temp, arguments[i]);
+            pad(temp, 1);
         }
 
         strcpy(result[0][1], temp);
@@ -170,7 +177,7 @@ int get_substr_count(const char * haystack, const char *needle)
 }
 
 #define PARSE_BUFFER 64
-#define PARSE_DELIM " \t\r\n\a"
+#define PARSE_DELIM " \t\r\a"
 struct argumentsContainer parseInput(char *line) {
     int bufferSize = PARSE_BUFFER, position = 0;
     char **tokens = malloc(bufferSize * sizeof(char*));
@@ -207,7 +214,7 @@ struct argumentsContainer parseInput(char *line) {
 }
 
 #define ARG_BUFFER 64
-#define ARG_DELIM ";&&||"
+#define ARG_DELIM ";&&||\n"
 struct argumentsContainer splitArguments(char *line) {
     int bufferSize = ARG_BUFFER, position = 0;
     char **tokens = malloc(bufferSize * sizeof(char*));
@@ -245,6 +252,17 @@ struct argumentsContainer splitArguments(char *line) {
 
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "EndlessLoop"
+
+
+int countOperands(char *input) {
+    int amperCount = get_substr_count(input, "&&");
+    int semiCount = get_substr_count(input, ";");
+    int lineCount = get_substr_count(input, "||");
+    int newlineCount = get_substr_count(input, "\n");
+
+    return amperCount+semiCount+lineCount+newlineCount;
+}
+
 /*
  * Main loop of shell. User input will be read in, split
  * into arguments and then executed.
@@ -257,18 +275,14 @@ void shell_loop() {
 
     do {
         struct commandList finalCommands;
+        finalCommands.numberOfCommands = 0;
 
         printf("> ");
         userInput = readInput();
 
-        int amperCount = get_substr_count(userInput, "&&");
-        int semiCount = get_substr_count(userInput, ";");
-        int lineCount = get_substr_count(userInput, "||");
-
-        const int operandsCount = amperCount+semiCount+lineCount;
+        int operandsCount = countOperands(userInput);
 
         if(operandsCount != 0){
-            //struct operandInfo operandsList[operandsCount];
 
             char* operandsFound[10];
             int operandsIndex[10];
@@ -277,28 +291,27 @@ void shell_loop() {
             position = collectOperands(userInput, "&&", operandsFound, operandsIndex, position);
             position = collectOperands(userInput, ";", operandsFound, operandsIndex, position);
             position = collectOperands(userInput, "||", operandsFound, operandsIndex, position);
+            position = collectOperands(userInput, "\n", operandsFound, operandsIndex, position);
 
-            arraySort(operandsIndex, operandsFound, operandsCount);
+
+            arraySort(operandsIndex, operandsFound, position);
 
             finalCommands.operators = operandsFound;
 
             arguments = splitArguments(userInput);
 
             for(int i=0; i<arguments.size; i++){
-                //printf("%s\n", arguments.arguments[i]);
                 struct argumentsContainer commandArgs = parseInput(arguments.arguments[i]);
 
                 static char* toExecute[0][3];
                 fineParserSingular(commandArgs.arguments, commandArgs.size, toExecute);
-
 
                 for(int j = 0; j<3; j++){
                     finalCommands.command[i][j] = toExecute[0][j];
                 }
                 finalCommands.numberOfCommands++;
 
-                //printf("%s\n", finalCommands.command[i][1]);
-                //free(commandArgs.arguments);
+                free(commandArgs.arguments);
 
             }
             executeCommand(finalCommands.command, finalCommands.numberOfCommands, finalCommands.operators);
@@ -307,7 +320,6 @@ void shell_loop() {
             arguments = parseInput(userInput);
 
             if(arguments.size==1){
-
                 finalCommands.command[0][0] = arguments.arguments[0];
                 finalCommands.command[0][1] = NULL;
                 finalCommands.command[0][2] = NULL;
@@ -326,17 +338,7 @@ void shell_loop() {
                 }
                 finalCommands.numberOfCommands = 1;
 
-
-                //char* operators[] = {"||", "&&", ";"};
-                //printf("%d", toExecute.numberOfCommands);
-                //printCommands(toExecute);
-                //char* command[][3] = {{"echo", "a", NULL}, {"echo", "a", NULL}, {"echo", "c", NULL}, {"echo", "d", NULL}};;
-                //char* operators[] = {"||", "&&", ";"};
-
-                //char* command[][3] = {{"./b.out", "< in > out", NULL}, {"echo", "a", NULL}, {"echo", "b", NULL} };
                 char* operators[] = {"x"};
-
-                //executeCommand(command, 3, operators);
                 executeCommand(finalCommands.command, finalCommands.numberOfCommands, operators);
 
             }
@@ -346,7 +348,7 @@ void shell_loop() {
 
 
         free(userInput);
-        //free(arguments.arguments);
+        free(arguments.arguments);
         //free(finalCommands.command);
 
     }while(true);
