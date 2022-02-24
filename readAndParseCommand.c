@@ -5,14 +5,20 @@
 #include <sys/wait.h>
 #include <fcntl.h>
 #include <stdbool.h>
-#include <assert.h>
-
+/*
+ * Command list container used by the shell
+ * for execution.
+ */
 struct commandList{
     int numberOfCommands;
     char** operators;
     char* command[][3];
 };
-
+/*
+ * Arguments container used by the parser
+ * to convert a line of user input to a format
+ * that is accepted by the shell executor.
+ */
 struct argumentsContainer{
     char **arguments;
     int size;
@@ -21,15 +27,15 @@ struct argumentsContainer{
 /*
  * function to pad a string with a certain number of spaces.
  */
-void pad(char *dest, int num_of_spaces, int size)
+void pad(char *destination, int numOfSpaces, int size)
 {
-    int len = strlen(dest);
+    int len = strlen(destination);
 
-    if( len + num_of_spaces >= size ) {
-        num_of_spaces = size - len - 1;
+    if(len + numOfSpaces >= size ) {
+        numOfSpaces = size - len - 1;
     }
-    memset( dest+len, ' ', num_of_spaces );
-    dest[len + num_of_spaces] = '\0';
+    memset(destination + len, ' ', numOfSpaces );
+    destination[len + numOfSpaces] = '\0';
 
 }
 
@@ -230,34 +236,34 @@ int get_substr_count(const char * haystack, const char *needle)
 #define PARSE_DELIM " \t\r\a"
 struct argumentsContainer parseInput(char *line) {
     int bufferSize = PARSE_BUFFER, position = 0;
-    char **tokens = malloc(bufferSize * sizeof(char*));
-    char *token;
+    char **text_tokens = malloc(bufferSize * sizeof(char*));
+    char *text_token;
 
-    if (!tokens) {
+    if (!text_tokens) {
         fprintf(stderr, "shell: memory allocation error\n");
         exit(EXIT_FAILURE);
     }
 
-    token = strtok(line, PARSE_DELIM);
-    while (token != NULL) {
-        tokens[position] = token;
+    text_token = strtok(line, PARSE_DELIM);
+    while (text_token != NULL) {
+        text_tokens[position] = text_token;
         position++;
 
         if (position >= bufferSize) {
             bufferSize += PARSE_BUFFER;
-            tokens = realloc(tokens, bufferSize * sizeof(char*));
-            if (!tokens) {
+            text_tokens = realloc(text_tokens, bufferSize * sizeof(char*));
+            if (!text_tokens) {
                 fprintf(stderr, "shell: memory allocation error\n");
                 exit(EXIT_FAILURE);
             }
         }
 
-        token = strtok(NULL, PARSE_DELIM);
+        text_token = strtok(NULL, PARSE_DELIM);
     }
-    tokens[position] = NULL;
+    text_tokens[position] = NULL;
 
     struct argumentsContainer result;
-    result.arguments = tokens;
+    result.arguments = text_tokens;
     result.size = position;
 
     return result;
@@ -318,6 +324,42 @@ int countOperands(char *input) {
 
     return amperCount+semiCount+lineCount+newlineCount;
 }
+/*
+ * Extracts command arguments from the argumentsContainer and formats them to fit
+ * with the commandList format.
+ */
+void extract_arguments(struct argumentsContainer arguments, struct commandList finalCommands) {
+    static char* toExecute[0][3];
+    fineParserSingular(arguments.arguments, arguments.size, toExecute);
+
+    for(int i = 0; i<3; i++){
+        finalCommands.command[0][i] = toExecute[0][i];
+    }
+    finalCommands.numberOfCommands = 1;
+
+    char* operators[] = {"x"};
+
+}
+/*
+ * Function to extract given operands from a line of user input and store
+ * them in the finalCommands.operators. A max size of 10 operands is set.
+ */
+void extract_operands(char *userInput, struct commandList finalCommands) {
+    char* operandsFound[10];
+    int operandsIndex[10];
+    int position = 0;
+
+    position = collectOperands(userInput, "&&", operandsFound, operandsIndex, position);
+    position = collectOperands(userInput, ";", operandsFound, operandsIndex, position);
+    position = collectOperands(userInput, "||", operandsFound, operandsIndex, position);
+    position = collectOperands(userInput, "\n", operandsFound, operandsIndex, position);
+
+
+    arraySort(operandsIndex, operandsFound, position);
+
+    finalCommands.operators = operandsFound;
+
+}
 
 /*
  * Main loop of shell. User input will be read in, split
@@ -340,19 +382,7 @@ void shell_loop() {
 
         if(operandsCount != 0){ //Multiple commands entered
 
-            char* operandsFound[10];
-            int operandsIndex[10];
-            int position = 0;
-
-            position = collectOperands(userInput, "&&", operandsFound, operandsIndex, position);
-            position = collectOperands(userInput, ";", operandsFound, operandsIndex, position);
-            position = collectOperands(userInput, "||", operandsFound, operandsIndex, position);
-            position = collectOperands(userInput, "\n", operandsFound, operandsIndex, position);
-
-
-            arraySort(operandsIndex, operandsFound, position);
-
-            finalCommands.operators = operandsFound;
+            extract_operands(userInput, finalCommands);
 
             arguments = splitArguments(userInput);
 
@@ -386,14 +416,7 @@ void shell_loop() {
                 executeCommand(finalCommands.command, finalCommands.numberOfCommands, operators);
 
             }else if(arguments.size>1){
-                static char* toExecute[0][3];
-                fineParserSingular(arguments.arguments, arguments.size, toExecute);
-
-                for(int i = 0; i<3; i++){
-                    finalCommands.command[0][i] = toExecute[0][i];
-                }
-                finalCommands.numberOfCommands = 1;
-
+                extract_arguments(arguments, finalCommands);
                 char* operators[] = {"x"};
                 executeCommand(finalCommands.command, finalCommands.numberOfCommands, operators);
 
