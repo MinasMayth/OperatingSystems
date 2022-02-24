@@ -17,6 +17,10 @@ struct argumentsContainer{
     char **arguments;
     int size;
 };
+
+/*
+ * function to pad a string with a certain number of spaces.
+ */
 void pad(char *dest, int num_of_spaces, int size)
 {
     int len = strlen(dest);
@@ -29,17 +33,11 @@ void pad(char *dest, int num_of_spaces, int size)
 
 }
 
-void chopN(char *str, size_t n)
-{
-    assert(n != 0 && str != 0);
-    size_t len = strlen(str);
-    if (n > len)
-        return;  // Or: n = len;
-    memmove(str, str+n, len - n + 1);
-}
-
-
-void removechar( char str[], char t )
+/*
+ * Function to search a string for a specific character,
+ * and then to remove all occurrences of that character from the string.
+ */
+void removeChar(char str[], char t )
 {
     int i,j;
     i = 0;
@@ -53,10 +51,15 @@ void removechar( char str[], char t )
     }
 }
 
+/*
+ * The heart of the fineParser. This function will accept an array of arguments
+ * and a destination array, formatting everything nicely so that it can be run
+ * by the shell.
+ */
  void fineParserSingular(char **arguments, int size,  char* result[0][3]) {
     result[0][0] = arguments[0];
     if(size == 2){
-        removechar(arguments[1], '"');
+        removeChar(arguments[1], '"');
         result[0][1] = arguments[1];
     }else{
         char temp[100] = "";
@@ -67,11 +70,8 @@ void removechar( char str[], char t )
             }
 
         }
-        removechar(temp, '"');
-        //printf("%s", temp);
-
-        //result[0][1] = "hello";
-        result[0][1];
+        removeChar(temp, '"');
+        result[0][1] = malloc((sizeof(temp)/sizeof(temp[0]))*sizeof(char*));
         strcpy(result[0][1], temp);
     }
 
@@ -79,7 +79,10 @@ void removechar( char str[], char t )
 }
 
 
-// Function to perform Selection Sort
+/*
+ * Function to sort an array in ascending order. A second array will be sorted
+ * in the same order.
+ */
 void arraySort(int arr[], char* arr2[], int n)
 {
      int temp;
@@ -187,7 +190,10 @@ char *readInput(void) {
 
     return userInput;
 }
-
+/*
+ * Code-specific function that searches through a string for all occurrences of a certain operand and then adds
+ * it to the operandsFound array. The indexes are also stored in a separate array for sorting later.
+ */
 int collectOperands(const char * haystack, const char *needle, char** operandsFound, int* operandsIndex, int position)
 {
     int count = 0;
@@ -201,7 +207,9 @@ int collectOperands(const char * haystack, const char *needle, char** operandsFo
     }
     return position;
 }
-
+/*
+ * Counts the occurrences of a certain substring in a string
+ */
 int get_substr_count(const char * haystack, const char *needle)
 {
     int count = 0;
@@ -213,6 +221,11 @@ int get_substr_count(const char * haystack, const char *needle)
     return count;
 }
 
+
+/*
+ * function to separate the input argument into singular words,
+ * signified by the POSIX delimiters below.
+ */
 #define PARSE_BUFFER 64
 #define PARSE_DELIM " \t\r\a"
 struct argumentsContainer parseInput(char *line) {
@@ -250,6 +263,10 @@ struct argumentsContainer parseInput(char *line) {
     return result;
 }
 
+/*
+ * Function to split a line of user input into separate commands. Functionally very similar to
+ * parseInput but uses different delimiters.
+ */
 #define ARG_BUFFER 64
 #define ARG_DELIM ";&&||\n"
 struct argumentsContainer splitArguments(char *line) {
@@ -290,7 +307,9 @@ struct argumentsContainer splitArguments(char *line) {
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "EndlessLoop"
 
-
+/*
+ * Function to count the number of operands in a line of input
+ */
 int countOperands(char *input) {
     int amperCount = get_substr_count(input, "&&");
     int semiCount = get_substr_count(input, ";");
@@ -319,7 +338,7 @@ void shell_loop() {
 
         int operandsCount = countOperands(userInput);
 
-        if(operandsCount != 0){
+        if(operandsCount != 0){ //Multiple commands entered
 
             char* operandsFound[10];
             int operandsIndex[10];
@@ -382,11 +401,8 @@ void shell_loop() {
 
         }
 
-
-
         free(userInput);
         free(arguments.arguments);
-        //free(finalCommands.command);
 
     }while(true);
 }
