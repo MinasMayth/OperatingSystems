@@ -30,7 +30,6 @@ int inFrame(int x, int *frames, int n)
   {
     if(frames[i] == x) 
     {
-      frames[i] = -1;
       return 1;
     }
   }
@@ -69,6 +68,15 @@ int *getString(int *index)
   return referenceString;
 }
 
+void output(int *pageFrames, int n, int faults)
+{
+  for(int i = 0; i < n; i++)
+  {
+    printf("| %d |\n", pageFrames[i]); 
+  }
+  printf("Faults: %d\n", faults);
+}
+
 int main(int argc, char **argv)
 {
   int pages = 0, index = 0, firstIn = 0, pageFaults = 0;
@@ -83,7 +91,7 @@ int main(int argc, char **argv)
   }
   
   referenceString = getString(&index);
-  
+  //output(pageFrames, pages, pageFaults);
   //Loop over refrencestring
   for(int i = 0; i < index; i++)
   {
@@ -93,6 +101,7 @@ int main(int argc, char **argv)
       pageFaults++;
       if(firstIn == pages) firstIn = 0;
     }
+    //output(pageFrames, pages, pageFaults);
   }
   
   printf("%d\n", pageFaults);
